@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  firstName    String
+  lastName     String
+  email        String   @unique
+  password     String
+  contactNo    String?
+  image         String?
+  dateOfBirth  DateTime?
+  gender       String?
+  Role         Role   @relation(fields: [role], references: [name])
+  role         String 
+  created_at   DateTime @default(now())
+  updated_at   DateTime?  @updatedAt
+  QuestionPerformance QuestionPerformance[]
+  ExamPerformance ExamPerformance[]
+  UserProgress UserProgress[]
+  UserEngagement UserEngagementStats[]
+  } 
+
+model Role {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  name            String @unique
+  description     String
+  numberOfUsers   Int?
+  permissionsSummary String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime?  @updatedAt
+  User            User[]
+  permission_ids   String[] @db.ObjectId
+  RolePermission  Permission[] @relation(fields: [permission_ids], references: [id])
+}
+
+model Permission {
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  description  String
+  created_at    DateTime @default(now())
+  updated_at    DateTime?  @updatedAt
+  role_ids       String[] @db.ObjectId
+  PermissionRole Role[] @relation(fields: [role_ids], references: [id])
+}
+
+model Question {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  subject        String
+  topic          String
+  difficulty     DifficultyLevel
+  type           QuestionType
+  question       String
+  option1       String?
+  option2       String?
+  option3       String?
+  option4       String?
+  answer        String?
+  explanation    String
+  keywords      String[]
+  created_at     DateTime @default(now())
+  updated_at     DateTime?  @updatedAt
+  QuestionPerformance   QuestionPerformance[]
+  exam_ids         String[] @db.ObjectId
+  ExamQuestion         Exam[] @relation(fields: [exam_ids], references: [id])
+    
+}
+enum QuestionType {
+  MCQ
+  DESCRIPTIVE
+}
+enum DifficultyLevel { 
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum CategoryType {
+  SUBJECT
+  TOPIC
+}
+
+model Category {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  type        CategoryType
+  noOfQuestions Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime?  @updatedAt
+}
+model Exam {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  duration    Int
+  totalMarks Float
+  totalQuestions Int
+  passingMarks Float
+  subject     String
+  question_ids String[] @db.ObjectId
+  ExamQuestions   Question[] @relation(fields: [question_ids], references: [id])
+  ExamPerformance ExamPerformance[]
+  created_at  DateTime @default(now())
+}
+
+model ExamPerformance {
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  exam_id            String  @db.ObjectId
+  user_id            String  @db.ObjectId
+  score              Float
+  correctAnswers     Int
+  timeTaken          Float
+  attemptDate        DateTime @default(now())
+  accuracyRate            Float
+  created_at         DateTime @default(now())
+  QuestionPerformance QuestionPerformance[]
+  User               User @relation(fields: [user_id], references: [id])
+  Exam               Exam @relation(fields: [exam_id], references: [id])
+}
+
+model UserProgress {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  user_id          String  @db.ObjectId
+  exam_id          String
+  progressPercent  Float
+  lastExamDate     DateTime
+  created_at       DateTime @default(now())
+  User            User @relation(fields: [user_id], references: [id])
+}
+
+model UserEngagementStats {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  user_id           String  @db.ObjectId
+  loginFrequency    Int
+  avgSessionDuration Float
+  created_at        DateTime @default(now())
+  User             User @relation(fields: [user_id], references: [id])
+}
+
+model QuestionPerformance {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  question_id      String    @db.ObjectId
+  exam_performance_id String? @db.ObjectId
+  user_id          String    @db.ObjectId  
+  isCorrect        Boolean   @default(false)
+  userResponse     String?
+  created_at       DateTime  @default(now())
+  Question         Question @relation(fields: [question_id], references: [id])
+  User             User     @relation(fields: [user_id], references: [id])
+  ExamPerformance  ExamPerformance? @relation(fields: [exam_performance_id], references: [id])
+}
